@@ -3,23 +3,26 @@ import scrapy
 import re
 from scrapy import Request
 import csv
+
+
 def qh_date(ymd):
-    html_begin='http://www.czce.com.cn/cn/DFSStaticFiles/Future/'
-    html_end='/FutureDataHolding.htm'
-    m_y=ymd[0:4]
-    url=html_begin+m_y+'/'+ymd+html_end
+    html_begin = 'http://www.czce.com.cn/cn/DFSStaticFiles/Future/'
+    html_end = '/FutureDataHolding.htm'
+    m_y = ymd[0:4]
+    url = html_begin + m_y + '/' + ymd + html_end
     return url
-ymd = csv.reader(open("2019A.csv"))
-date_list=[]
+
+
+ymd = csv.reader(open("/Users/wangyongning/Desktop/qh_data/new_date.csv"))
+date_list = []
 for row in ymd:
     row = ''.join(row)
     date_list.append(row)
 
 
-#这是一天交易数据
+# 这是一天交易数据
 class A1Spider(scrapy.Spider):
-    a='20190423'
-    url = qh_date(a)
+
     name = 'h2'
     allowed_domains = ['czce.com.cn']
     url = 'http://www.czce.com.cn/cn/DFSStaticFiles/Future/2018/20180102/FutureDataHolding.htm'
@@ -36,10 +39,9 @@ class A1Spider(scrapy.Spider):
         jydate_from_html = response.xpath('/html/body/div/table/tbody/tr/td/text()')
 
         i = 1
-        o=0
-        name_list = []  #存放期货名称的列表
+        o = 0
+        name_list = []  # 存放期货名称的列表
         for pz in name_form_heml:
-
             # 数据整理
             a = pz.extract()
             a = ("".join(a))
@@ -57,12 +59,10 @@ class A1Spider(scrapy.Spider):
             # 单个期货名称数据添加到列表name_list中
             name_list.append(name)
 
-            #name_save = (name_list[o:o + 1])
-        #name_list存放整理完成的期货名称（品种）
+            # name_save = (name_list[o:o + 1])
+        # name_list存放整理完成的期货名称（品种）
 
-
-
-        #列表jydate_list 存放交易数据
+        # 列表jydate_list 存放交易数据
         jydate_list = []
         for jydate in jydate_from_html:
             a = (jydate.extract())
@@ -72,50 +72,49 @@ class A1Spider(scrapy.Spider):
             jydate_list.append(a)
 
         del jydate_list[0:10]
-        #jydate_list用来存放所有的交易字段
+        # jydate_list用来存放所有的交易字段
         endk = len(jydate_list)
-        y=0
-        for j in range(0,endk,10):
+        y = 0
+        for j in range(0, endk, 10):
 
-                a1 = jydate_list[j:j+10]
+            a1 = jydate_list[j:j + 10]
 
+            pda = (a1[0:1])
 
-                pda=(a1[0:1])
+            if (pda == ['合计'] or (pda == ['合计 '])):
+                yield {
+                    "日期": b,
+                    "期货品种": name_list[y:y + 1],
+                    "名次": a1[0:1],
+                    "会员简称0": a1[1:2],
+                    "成交量（手）": a1[2:3],
+                    "增减量0": a1[3:4],
+                    "会员简称1": a1[4:5],
+                    "持买仓量": a1[5:6],
+                    "增减量1": a1[6:7],
+                    "会员简称2": a1[7:8],
+                    "持卖仓量": a1[8:9],
+                    "增减量2": a1[9:10],
+                }
+                y = y + 1  # 取下一个期货名称
 
-                if (pda==['合计']or(pda==['合计 '])):
-                    yield {
-                        "日期": b,
-                        "期货品种": name_list[y:y + 1],
-                        "名次": a1[0:1],
-                        "会员简称0": a1[1:2],
-                        "成交量（手）": a1[2:3],
-                        "增减量0": a1[3:4],
-                        "会员简称1": a1[4:5],
-                        "持买仓量": a1[5:6],
-                        "增减量1": a1[6:7],
-                        "会员简称2": a1[7:8],
-                        "持卖仓量": a1[8:9],
-                        "增减量2": a1[9:10],
-                    }
-                    y=y+1   #取下一个期货名称
+                pass
+            else:
 
-                    pass
-                else:
-
-                    yield {
-                            "日期":b,
-                            "期货品种":name_list[y:y+1],
-                            "名次": a1[0:1],
-                            "会员简称0": a1[1:2],
-                            "成交量（手）": a1[2:3],
-                            "增减量0": a1[3:4],
-                            "会员简称1": a1[4:5],
-                            "持买仓量": a1[5:6],
-                            "增减量1": a1[6:7],
-                            "会员简称2": a1[7:8],
-                            "持卖仓量": a1[8:9],
-                            "增减量2": a1[9:10],
-                    }
+                yield {
+                    "日期": b,
+                    "期货品种": name_list[y:y + 1],
+                    "名次": a1[0:1],
+                    "会员简称0": a1[1:2],
+                    "成交量（手）": a1[2:3],
+                    "增减量0": a1[3:4],
+                    "会员简称1": a1[4:5],
+                    "持买仓量": a1[5:6],
+                    "增减量1": a1[6:7],
+                    "会员简称2": a1[7:8],
+                    "持卖仓量": a1[8:9],
+                    "增减量2": a1[9:10],
+                }
 
         date_list.pop(0)
         a = date_list[0:1]
@@ -123,7 +122,3 @@ class A1Spider(scrapy.Spider):
         next = qh_date(b)
         print(next)
         yield Request(next)
-
-
-
-
